@@ -1,0 +1,161 @@
+hive> show databases;
+OK
+default
+Time taken: 4.08 seconds, Fetched: 1 row(s)
+hive> create database hive_db;
+OK
+Time taken: 0.443 seconds
+
+hive> use hive_db;
+OK
+Time taken: 0.096 seconds
+
+hive> create table users
+    > (
+    > id int,
+    > name string,
+    > salary int,
+    > unit string
+    > )row format delimited
+    > fields terminated by ',';
+OK
+Time taken: 2.01 seconds
+hive> load data local inpath 'file:///config/workspace/users.csv' into table users;
+Loading data to table hive_db.users
+OK
+Time taken: 4.087 seconds
+hive> select * from users.csv;
+FAILED: SemanticException [Error 10001]: Line 1:14 Table not found 'csv'
+hive> select * from users;
+OK
+1       Amit    100     DNA
+2       Sumit   200     DNA
+3       Yadav   300     DNA
+4       Sunil   500     FCS
+5       Kranti  100     FCS
+6       Mahoor  200     FCS
+8       Chandra 500     DNA
+Time taken: 4.138 seconds, Fetched: 7 row(s)
+hive> create table locations
+    > (
+    > id int,
+    > location string
+    > )
+    > row format delimited
+    > fields terminated by ',';
+OK
+Time taken: 0.207 seconds
+hive> load data local inpath 'file:///config/workspace/locations.csv' into table users;
+Loading data to table hive_db.users
+OK
+Time taken: 1.654 seconds
+hive> select * from locations;
+OK
+Time taken: 0.563 seconds
+hive> set hive.enforce.bucketing=true;
+hive> create table buck_users
+    > (
+    > id int,
+    > name string,
+    > salary int,
+    > unit string
+    > )
+    > clustered by (id)
+    > sorted by (id)
+    > into 2 buckets;
+OK
+Time taken: 0.458 seconds
+hive> insert overwrite table buck_users select * from users;
+Query ID = abc_20230820204253_10c5e3a4-c4e2-43f4-8eb3-b3e72d23f205
+Total jobs = 2
+Launching Job 1 out of 2
+Number of reduce tasks determined at compile time: 2
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1692543083668_0001, Tracking URL = http://dc269e3df303:8088/proxy/application_1692543083668_0001/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1692543083668_0001
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 2
+2023-08-20 20:43:27,160 Stage-1 map = 0%,  reduce = 0%
+2023-08-20 20:43:43,272 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 3.02 sec
+2023-08-20 20:44:01,898 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 11.04 sec
+MapReduce Total cumulative CPU time: 11 seconds 40 msec
+Ended Job = job_1692543083668_0001
+Loading data to table hive_db.buck_users
+Launching Job 2 out of 2
+Number of reduce tasks determined at compile time: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1692543083668_0002, Tracking URL = http://dc269e3df303:8088/proxy/application_1692543083668_0002/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1692543083668_0002
+Hadoop job information for Stage-3: number of mappers: 1; number of reducers: 1
+2023-08-20 20:44:31,797 Stage-3 map = 0%,  reduce = 0%
+2023-08-20 20:44:48,168 Stage-3 map = 100%,  reduce = 0%, Cumulative CPU 3.0 sec
+2023-08-20 20:45:00,876 Stage-3 map = 100%,  reduce = 100%, Cumulative CPU 6.63 sec
+MapReduce Total cumulative CPU time: 6 seconds 630 msec
+Ended Job = job_1692543083668_0002
+MapReduce Jobs Launched: 
+Stage-Stage-1: Map: 1  Reduce: 2   Cumulative CPU: 11.04 sec   HDFS Read: 21957 HDFS Write: 897 SUCCESS
+Stage-Stage-3: Map: 1  Reduce: 1   Cumulative CPU: 6.63 sec   HDFS Read: 13167 HDFS Write: 381 SUCCESS
+Total MapReduce CPU Time Spent: 17 seconds 670 msec
+OK
+Time taken: 132.014 seconds
+hive> describe formatted buck_users;
+OK
+# col_name              data_type               comment             
+id                      int                                         
+name                    string                                      
+salary                  int                                         
+unit                    string                                      
+                 
+# Detailed Table Information             
+Database:               hive_db                  
+OwnerType:              USER                     
+Owner:                  abc                      
+CreateTime:             Sun Aug 20 20:42:34 IST 2023     
+LastAccessTime:         UNKNOWN                  
+Retention:              0                        
+Location:               hdfs://localhost/user/hive/warehouse/hive_db.db/buck_users       
+Table Type:             MANAGED_TABLE            
+Table Parameters:                
+        COLUMN_STATS_ACCURATE   {\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"id\":\"true\",\"name\":\"true\",\"salary\":\"true\",\"unit\":\"true\"}}
+        SORTBUCKETCOLSPREFIX    TRUE                
+        bucketing_version       2                   
+        numFiles                2                   
+        numRows                 14                  
+        rawDataSize             198                 
+        totalSize               212                 
+        transient_lastDdlTime   1692544504          
+                 
+# Storage Information            
+SerDe Library:          org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe       
+InputFormat:            org.apache.hadoop.mapred.TextInputFormat         
+OutputFormat:           org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat       
+Compressed:             No                       
+Num Buckets:            2                        
+Bucket Columns:         [id]                     
+Sort Columns:           [Order(col:id, order:1)]         
+Storage Desc Params:             
+        serialization.format    1                   
+Time taken: 0.273 seconds, Fetched: 35 row(s)
+hive> 
+
+ hadoop side
+
+abc@dc269e3df303:~/workspace$ hadoop fs -ls /user/hive/warehouse
+Found 1 items
+drwxr-xr-x   - abc supergroup          0 2023-08-20 20:42 /user/hive/warehouse/hive_db.db
+abc@dc269e3df303:~/workspace$  hadoop fs -ls /user/hive/warehouse/hive_db.db/buck_users
+Found 2 items
+-rw-r--r--   1 abc supergroup        104 2023-08-20 20:44 /user/hive/warehouse/hive_db.db/buck_users/000000_0
+-rw-r--r--   1 abc supergroup        108 2023-08-20 20:44 /user/hive/warehouse/hive_db.db/buck_users/000001_0
+abc@dc269e3df303:~/workspace$ 
+
+
